@@ -38,33 +38,85 @@ const int DHTLIB_TIMEOUT = (F_CPU/40000);
 class dht
 {
 public:
-    // return values:
-    // DHTLIB_OK
-    // DHTLIB_ERROR_CHECKSUM
-    // DHTLIB_ERROR_TIMEOUT
-    int read11(uint8_t pin);      // DHT11 & DHT12
-    int read(uint8_t pin);        // DHT22
+// return values:
+// DHTLIB_OK
+// DHTLIB_ERROR_CHECKSUM
+// DHTLIB_ERROR_TIMEOUT
+        int read11(uint8_t pin);      // DHT11 & DHT12
+        int read(uint8_t pin);        // DHT22
+        int read_LoopDelay(uint8_t pin);        // DHT22
 
-    inline int read12(uint8_t pin)   { return read11(pin); }; // ok
-    inline int read21(uint8_t pin)   { return read(pin); };   // ok
-    inline int read22(uint8_t pin)   { return read(pin); };   // ok
-    inline int read33(uint8_t pin)   { return read(pin); };   // ok
-    inline int read44(uint8_t pin)   { return read(pin); };   // ok
-    inline int read2301(uint8_t pin) { return read(pin); };   // ok
-    inline int read2302(uint8_t pin) { return read(pin); };   // ok
-    inline int read2320(uint8_t pin) { return read(pin); };   //.ok
-    inline int read2322(uint8_t pin) { return read(pin); };   // ok
+        inline int read12(uint8_t pin)
+        {
+            return read11(pin);
+        }
+        ; // ok
+        inline int read21(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
+        inline int read22(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
+        inline int read22_LoopDelay(uint8_t pin)
+        {
+            return read_LoopDelay(pin);
+        }
+        ;   // ok
+        inline int read33(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
+        inline int read44(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
+        inline int read2301(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
+        inline int read2302(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
+        inline int read2320(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   //.ok
+        inline int read2322(uint8_t pin)
+        {
+            return read(pin);
+        }
+        ;   // ok
 
-    float humidity;
-    float temperature;
 
-    bool getDisableIRQ()              { return _disableIRQ; };
-    void setDisableIRQ(bool b )       { _disableIRQ = b; };
+        float humidity;
+        float temperature;
+
+        bool getDisableIRQ()
+        {
+            return _disableIRQ;
+        }
+        ;
+        void setDisableIRQ(bool b)
+        {
+            _disableIRQ = b;
+        }
+        ;
 
 private:
-    uint8_t bits[5];  // buffer to receive data
-    int     _readSensor(uint8_t pin, uint8_t wakeupDelay);
-    bool    _disableIRQ = false;
+        uint8_t bits[5];  // buffer to receive data
+        int _readSensor(uint8_t pin, uint8_t wakeupDelay);
+        int _readSensorLoopDelay(uint8_t pin, uint8_t wakeupDelay);
+        bool _disableIRQ = false;
 };
 #endif
 //

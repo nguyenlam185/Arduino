@@ -107,6 +107,40 @@ int dht::read(uint8_t pin)
     return DHTLIB_OK;
 }
 
+// return values:
+// DHTLIB_OK
+// DHTLIB_ERROR_CHECKSUM
+// DHTLIB_ERROR_TIMEOUT
+int dht::read_LoopDelay(uint8_t pin)
+{
+    // READ VALUES
+    if (_disableIRQ) noInterrupts();
+    int rv = _readSensorLoopDelay(pin, DHTLIB_DHT_WAKEUP);
+    if (_disableIRQ) interrupts();
+    if (rv != DHTLIB_OK)
+    {
+        humidity = DHTLIB_INVALID_VALUE;  // NaN prefered?
+        temperature = DHTLIB_INVALID_VALUE;  // NaN prefered?
+        return rv; // propagate error value
+    }
+
+    // CONVERT AND STORE
+    humidity = word(bits[0], bits[1]) * 0.1;
+    temperature = word(bits[2] & 0x7F, bits[3]) * 0.1;
+    if (bits[2] & 0x80)  // negative temperature
+    {
+        temperature = -temperature;
+    }
+
+    // TEST CHECKSUM
+    uint8_t sum = bits[0] + bits[1] + bits[2] + bits[3];
+    if (bits[4] != sum)
+    {
+        return DHTLIB_ERROR_CHECKSUM;
+    }
+    return DHTLIB_OK;
+}
+
 /////////////////////////////////////////////////////
 //
 // PRIVATE
@@ -162,6 +196,72 @@ int dht::_readSensor(uint8_t pin, uint8_t wakeupDelay)
         }
 
         if ((micros() - t) > 40)
+        {
+            bits[idx] |= mask;
+        }
+        mask >>= 1;
+        if (mask == 0)   // next byte?
+        {
+            mask = 128;
+            idx++;
+        }
+    }
+
+    return DHTLIB_OK;
+}
+
+// return values:
+// DHTLIB_OK
+// DHTLIB_ERROR_TIMEOUT
+int dht::_readSensorLoopDelay(uint8_t pin, uint8_t wakeupDelay)
+{
+    // INIT BUFFERVAR TO RECEIVE DATA
+    uint8_t mask = 128;
+    uint8_t idx = 0;
+
+    // EMPTY BUFFER
+    for (uint8_t i = 0; i < 5; i++)
+        bits[i] = 0;
+
+    // REQUEST SAMPLE
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+    ets_delay_us(1000 * wakeupDelay);
+    pinMode(pin, INPUT);
+    ets_delay_us(40);
+
+    // GET ACKNOWLEDGE or TIMEOUT
+    uint16_t loopCnt = DHTLIB_TIMEOUT;
+    while (digitalRead(pin) == LOW)
+    {
+        if (--loopCnt == 0) return DHTLIB_ERROR_TIMEOUT;
+    }
+
+    loopCnt = DHTLIB_TIMEOUT;
+    while (digitalRead(pin) == HIGH)
+    {
+        if (--loopCnt == 0) return DHTLIB_ERROR_TIMEOUT;
+    }
+
+    // READ THE OUTPUT - 40 BITS => 5 BYTES
+    for (uint8_t i = 40; i != 0; i--)
+    {
+        loopCnt = DHTLIB_TIMEOUT;
+        while (digitalRead(pin) == LOW)
+        {
+            if (--loopCnt == 0) return DHTLIB_ERROR_TIMEOUT;
+        }
+
+        uint32_t t = 0;
+
+        loopCnt = 100;   //DHTLIB_TIMEOUT;
+        while (digitalRead(pin) == HIGH)
+        {
+            ets_delay_us(1);
+            if (--loopCnt == 0) return DHTLIB_ERROR_TIMEOUT;
+        }
+
+        if (loopCnt < 65)
         {
             bits[idx] |= mask;
         }
